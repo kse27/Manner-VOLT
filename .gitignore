@@ -1,0 +1,53 @@
+# 비밀 값 (절대 커밋하지 않는다)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# 빌드 산출물
+build/
+.gradle/
+.idea/
+node_modules/
+cdk.out/
+.aws-sam/
+
+# OS
+.DS_Store
+res.md
+res.pdf
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+
+# 개인 기획 메모 (저장소 제외)
+1_EV충전대기_기획초안.md
+2_EV충전대기_구현가능성검토.md
+3_기계식주차장_데이터검토.md
+
+# AI 개발 도구 설정과 작업 기록 (저장소 제외)
+CLAUDE.md
+.aidlc-rule-details/
+.kiro/
+.claude/
+aidlc-docs/*
+!aidlc-docs/inception/
+aidlc-docs/inception/*
+!aidlc-docs/inception/requirements/
+!aidlc-docs/inception/application-design/
+aidlc-docs/inception/requirements/*
+!aidlc-docs/inception/requirements/requirements.md
+aidlc-docs/inception/application-design/*
+!aidlc-docs/inception/application-design/consolidated-design.md
+
+# 제출용 문서 초안
+docs/proposal-section5-draft.md
+docs/proposal-section3-draft.md

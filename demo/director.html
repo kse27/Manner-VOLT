@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>매너볼트 감독 패널</title>
+<style>
+  :root { --bg:#0b1210; --surface:#141d1a; --surface2:#1d2925; --text:#e8f1ed; --sub:#93a69e; --volt:#3ddc84; --amber:#f5b94a; --blue:#6aa8ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, "Apple SD Gothic Neo", sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 48px; display:grid; grid-template-columns: 1.3fr 1fr; gap:20px; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  header { grid-column:1/-1; display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  h1 { margin:0; font-size:22px; color:var(--volt); }
+  .clock { font-size:56px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--sub); font-size:14px; }
+  section { background:var(--surface); border-radius:18px; padding:18px; }
+  h2 { margin:0 0 12px; font-size:15px; color:var(--sub); font-weight:600; }
+  ol { list-style:none; margin:0 0 14px; padding:0; }
+  li { display:flex; gap:12px; padding:8px 6px; border-radius:10px; }
+  li .n { flex:none; width:28px; height:28px; border-radius:50%; background:var(--surface2); display:grid; place-items:center; font-size:13px; }
+  li.done .n { background:#1f4a33; } li.now { background:var(--surface2); } li.now .n { background:var(--volt); color:#062; }
+  li .t { font-weight:600; } li .d { color:var(--sub); font-size:13px; margin-top:2px; }
+  button { font:inherit; color:var(--text); background:var(--surface2); border:1px solid #2c3b35; border-radius:12px; padding:10px 14px; cursor:pointer; }
+  button:hover { border-color:var(--volt); } button:disabled { opacity:.5; cursor:wait; }
+  button.primary { background:var(--volt); color:#062; border:none; font-weight:700; font-size:18px; padding:14px 22px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .tag { font-size:12px; color:var(--sub); width:100%; margin-top:6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>매너볼트 감독 패널</h1><div class="sub">두 대 시연용 · 이 화면은 영상에 나오지 않게 따로 띄우세요</div></div>
+    <div style="text-align:right"><div class="clock" id="clock">--:--</div><div class="sub" id="speed"></div></div>
+  </header>
+
+  <section>
+    <h2>기획서 4항 시나리오</h2>
+    <ol id="steps"></ol>
+    <div class="row">
+      <button class="primary" data-a="next">다음 단계 ▶</button>
+      <button data-a="reset">처음부터</button>
+    </div>
+    <div class="tag">① 단계에서는 A 화면의 '맞아요', '출차로 확정'을 직접 터치하면 영상에 자연스럽게 나옵니다. 누르지 않아도 다음 단계에서 대신 처리합니다.</div>
+  </section>
+
+  <section>
+    <h2>대체 흐름 (처음부터 다시 시작)</h2>
+    <div class="row"><button data-a="slow">충전이 느려짐 → 출차 변경 제안</button></div>
+    <div class="row"><button data-a="grace">A 유예 시간 내 미출차 → B에 다른 충전기 안내</button></div>
+    <div class="row"><button data-a="noshow">B 도착 예정 + 10분 안에 안 옴 → 찜 자동 취소</button></div>
+
+    <h2 style="margin-top:18px">시각</h2>
+    <div class="row">
+      <button data-a="speed" data-v="1">1배</button><button data-a="speed" data-v="60">60배</button><button data-a="speed" data-v="600">600배</button>
+    </div>
+    <div class="row">
+      <button data-a="jump" data-v="5">+5분</button><button data-a="jump" data-v="15">+15분</button><button data-a="jump" data-v="60">+1시간</button>
+    </div>
+
+    <h2 style="margin-top:18px">A 차량 (충전 중)</h2>
+    <div class="row">
+      <button data-a="A:plug">충전기 연결</button><button data-a="A:unplug">충전기 분리</button>
+      <button data-a="A:depart">출발 (기어 D, 구역 이탈)</button><button data-a="A:arrive">주차 (P)</button><button data-a="A:slow">실제 출력 70%</button>
+    </div>
+    <h2>B 차량 (기다리는 차)</h2>
+    <div class="row">
+      <button data-a="B:commute">퇴근 출발 (집까지 28분)</button><button data-a="B:park">정차 (P)</button><button data-a="B:arrive">집 도착</button>
+    </div>
+  </section>
+</main>
+<script>
+  const fmt = (ms) => new Date(ms).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' });
+  let busy = false;
+  async function refresh() {
+    try {
+      const s = await (await fetch('/demo/director-state')).json();
+      document.getElementById('clock').textContent = fmt(s.now);
+      document.getElementById('speed').textContent = s.speed === 1 ? '실시간' : `${s.speed}배속`;
+      const ol = document.getElementById('steps');
+      ol.innerHTML = '';
+      s.steps.forEach((st, i) => {
+        const li = document.createElement('li');
+        li.className = i < s.step ? 'done' : i === s.step ? 'now' : '';
+        li.innerHTML = `<span class="n">${i}</span><div><div class="t"></div><div class="d"></div></div>`;
+        li.querySelector('.t').textContent = st.title;
+        li.querySelector('.d').textContent = st.detail;
+        ol.appendChild(li);
+      });
+      busy = s.busy;
+      document.querySelectorAll('button').forEach(b => b.disabled = busy);
+    } catch (e) {
+      document.getElementById('speed').textContent = '서버 연결 안 됨';
+    }
+  }
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-a]');
+    if (!b || busy) return;
+    await fetch('/demo/action', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: b.dataset.a, arg: b.dataset.v ?? null }) });
+    setTimeout(refresh, 300);
+  });
+  refresh(); setInterval(refresh, 1000);
+</script>
+</body>
+</html>
